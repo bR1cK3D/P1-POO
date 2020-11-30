@@ -7,32 +7,54 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@page import="Classes.Disciplinas" %>
 <%
-    String msg = "";
-    double nota;
-    int indice;
-    Disciplinas lista = (Disciplinas)application.getAttribute("lista");
-    if (lista == null) {
-        lista = new Disciplinas();
-    }
-    try {
-        nota = Double.parseDouble(request.getParameter("nota"));
-        indice = Integer.parseInt(request.getParameter("indice"));
-    } catch(Exception e) {
-        nota = -1;
-        indice = -1;
-    }
-    
-    if (nota > -1) {
-        if (nota > 10) {
-        msg = "Nota não pode ser maior que 10, a nota da disciplina"+lista.getLista().get(indice).getNome()+" não foi alterada";
-        }
-     else {
-        msg = "Nota da Disciplina "+lista.getLista().get(indice).getNome()+" foi alterada com sucesso";
-        lista.addNota(indice, nota);
-    }
-   } else {
-        
-    }
+   String msg = "";
+   double nota = 0.0;
+   String nome = "";
+   String ciclo = "";
+   String ementa = "";
+   if(request.getParameter("formNota") != null) {
+       try {
+           nota = Double.parseDouble(request.getParameter("nota"));
+           nome = request.getParameter("nome");
+           msg = "Nota não pode ser menor que 0";
+       } catch(Exception e) {
+           nota = -1;
+           nome = "";
+           msg="Nota falhou";
+       }
+       if(nota > -1) {
+           msg = "Nota não pode ser menor que 0";
+           if(nota > 10) {
+               msg = "Nota não pode ser maior que 10";
+           } else {
+               Disciplinas.alterarNota(nome, nota);
+               msg = "Nota alterada com sucesso";
+           }
+       }
+   }
+   if (request.getParameter("formAdicionar") != null) {
+       try {
+           nome = request.getParameter("nomeDisciplina");
+           ementa = request.getParameter("ementa");
+           ciclo = request.getParameter("ciclo");
+           nota = Double.parseDouble(request.getParameter("nota"));
+           Disciplinas.inserirDisciplina(nome, ementa, ciclo, nota);
+           msg = "Disciplina Adicionada";
+           response.sendRedirect(request.getRequestURI());
+       } catch (Exception ex) {
+           msg = ex.getLocalizedMessage()+" puts";
+       }
+   }
+   
+   if(request.getParameter("remover") != null) {
+       try {
+           nome = request.getParameter("nome");
+           Disciplinas.excluirDisciplina(nome);
+           
+       } catch(Exception ex) {
+           msg=ex.getLocalizedMessage();
+       }
+   }
 %>
 <!DOCTYPE html>
 <html>
@@ -52,20 +74,42 @@
                 <th>Nota</th>
             </tr>
             <%
-                for (int i=0; i<lista.getLista().size(); i++) {
+                for (int i=0; i<Disciplinas.getList().size(); i++) {
             %>
             <tr>
-                <% Disciplinas u = lista.getLista().get(i);%>
+                <% Disciplinas u = Disciplinas.getList().get(i);%>
                 <th><%= u.getNome()%></th>
                 <th><%= u.getEmenta()%></th>
                 <th><%= u.getCiclo()%></th>
-            <form method="get">
+            <form method="POST">
                 <th><input type="text" name="nota" value="<%= u.getNota()%>"></th>
-                <input type="hidden" name="indice" value="<%= i%>">
-                <th><input type="submit" value="Adicionar nota"></th>
+                <input type="hidden" name="nome" value="<%= u.getNome() %>">
+                <th><input type="submit" name="formNota" value="Adicionar nota"></th>
+                <th><input type="submit" name="remover" value="remover Disciplina"></th>
             </form>
-            <tr>
+            </tr>
                 <%}%>
         </table>
+        <br><br>
+        <div>
+            <fieldset>
+                <legend>Adicionar disciplina</legend>
+                <form method="POST">
+                    <div>Nome da disciplina:</div>
+                    <div><input type="text" name="nomeDisciplina"/></div>
+                    <div>Ementa:</div>
+                    <div><input type="text" name="ementa"/></div>
+                    <div>Ciclo:</div>
+                    <div><input type="text" name="ciclo"/></div>
+                    <div>Nota:</div>
+                    <div><input type="text" name="nota"/></div>
+                    <hr/>
+                    <div>
+                        <input type="submit" name="formAdicionar" value="Adicionar">
+                        <input type="submit" name="Cancelar" value="Cancelar">
+                    </div>
+                </form>
+            </fieldset>
+        </div>
     </body>
 </html>
