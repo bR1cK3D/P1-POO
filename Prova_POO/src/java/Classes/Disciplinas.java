@@ -5,8 +5,12 @@
  */
 package Classes;
 
-import java.lang.reflect.Array;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
+import web.DbListener;
 
 /**
  *
@@ -15,29 +19,16 @@ import java.util.ArrayList;
 public class Disciplinas {
     private String nome;
     private String ementa;
-    private int ciclo;
+    private String ciclo;
     private double nota;
-    private ArrayList<Disciplinas> Lista = new ArrayList<Disciplinas>();
 
-    public Disciplinas() {
-        this.nome = null;
-        this.ementa = null;
-        this.ciclo = 0;
-        this.nota = 0; 
-    }
-
-    public Disciplinas(String nome, String ementa, int ciclo, double nota) {
+    public Disciplinas(String nome, String ementa, String ciclo, double nota) {
         this.nome = nome;
         this.ementa = ementa;
         this.ciclo = ciclo;
         this.nota = nota;
     }
     
-    public Disciplinas(String nome, String ementa, int ciclo) {
-        this.nome = nome;
-        this.ementa = ementa;
-        this.ciclo = ciclo;
-    }
 
     public String getNome() {
         return nome;
@@ -55,11 +46,11 @@ public class Disciplinas {
         this.ementa = ementa;
     }
 
-    public int getCiclo() {
+    public String getCiclo() {
         return ciclo;
     }
 
-    public void setCiclo(int ciclo) {
+    public void setCiclo(String ciclo) {
         this.ciclo = ciclo;
     }
 
@@ -71,16 +62,66 @@ public class Disciplinas {
         this.nota = nota;
     }
 
-    public ArrayList<Disciplinas> getLista() {
-        return Lista;
+    public static ArrayList<Disciplinas> getList()throws Exception {
+        ArrayList<Disciplinas> exibe = new ArrayList<>();
+        Connection con = DbListener.getConnection();
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT * FROM disciplinas");
+        while(rs.next()) {
+            exibe.add(new Disciplinas(
+                    rs.getString("nome"),
+                    rs.getString("ementa"),
+                    rs.getString("ciclo"),
+                    rs.getDouble("nota")
+            ));   
+        }
+        rs.close();
+        stmt.close();
+        con.close();
+        return exibe;
     }
 
-    public void addList(Disciplinas disciplina) {
-        Lista.add(new Disciplinas(disciplina.getNome(), disciplina.getEmenta(), disciplina.getCiclo()));
+    public static void inserirDisciplina(String nome, String ementa, String ciclo, double nota) throws Exception {
+        Connection con = DbListener.getConnection();
+        PreparedStatement stmt = con.prepareStatement
+        ("INSERT INTO disciplinas(nome, ementa, ciclo, nota) VALUES(?,?,?,?)");
+        stmt.setString(1, nome);
+        stmt.setString(2, ementa);
+        stmt.setString(3, ciclo);
+        stmt.setDouble(4, nota);
+        stmt.execute();
+        stmt.close();
+        con.close();
     }
     
-    public void addNota (int indice, double nota) {
-        Lista.get(indice).setNota(nota);
+    public static void alterarNota (String nome, double nota) throws Exception {
+        Connection con = DbListener.getConnection();
+        PreparedStatement stmt = con.prepareStatement
+                ("UPDATE disciplinas SET nota=? WHERE nome=?");
+                stmt.setDouble(1, nota);
+                stmt.setString(2, nome);
+                stmt.execute();
+                stmt.close();
+                con.close();
+    }
+    
+    public static void excluirDisciplina(String nome) throws Exception {
+        Connection con = DbListener.getConnection();
+        PreparedStatement stmt = con.prepareStatement
+        ("DELETE FROM disciplinas WHERE nome= ?");
+        stmt.setString(1, nome);
+        stmt.execute();
+        stmt.close();
+        con.close();
+    }
+    
+    public static String getCreateStatement() {
+        return "CREATE TABLE IF NOT EXISTS disciplinas("
+        + "nome VARCHAR(50) PRIMARY KEY,"
+        + "ementa VARCHAR(300) NOT NULL,"
+        + "ciclo VARCHAR(2) NOT NULL,"
+        + "nota NUMERIC(2,2) NOT NULL"
+        + ")";
     }
     
 }
